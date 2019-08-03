@@ -1,7 +1,7 @@
 package com.wanshifu.transformers.common.remote.server;
 
 import com.wanshifu.transformers.common.remote.RpcException;
-import com.wanshifu.transformers.common.remote.netty.NettyRpcServer;
+import com.wanshifu.transformers.common.remote.netty.server.NettyRpcServer;
 import com.wanshifu.transformers.common.remote.protocol.RpcRequest;
 import com.wanshifu.transformers.common.remote.protocol.RpcResponse;
 import com.wanshifu.transformers.common.remote.protocol.serialize.Serializer;

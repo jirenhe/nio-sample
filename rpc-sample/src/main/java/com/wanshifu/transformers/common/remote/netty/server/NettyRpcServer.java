@@ -1,12 +1,13 @@
-package com.wanshifu.transformers.common.remote.netty;
+package com.wanshifu.transformers.common.remote.netty.server;
 
-import com.wanshifu.transformers.common.remote.server.RequestProcessor;
-import com.wanshifu.transformers.common.remote.server.RpcServer;
+import com.wanshifu.transformers.common.remote.RpcException;
 import com.wanshifu.transformers.common.remote.netty.code.NettyDecoder;
 import com.wanshifu.transformers.common.remote.netty.code.NettyEncoder;
 import com.wanshifu.transformers.common.remote.protocol.RpcRequest;
 import com.wanshifu.transformers.common.remote.protocol.RpcResponse;
 import com.wanshifu.transformers.common.remote.protocol.serialize.Serializer;
+import com.wanshifu.transformers.common.remote.server.RequestProcessor;
+import com.wanshifu.transformers.common.remote.server.RpcServer;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
@@ -35,7 +36,7 @@ public class NettyRpcServer implements RpcServer {
     }
 
     @Override
-    public void start(final RequestProcessor requestProcessor) throws Exception {
+    public void start(final RequestProcessor requestProcessor) throws RpcException {
         bootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
@@ -43,17 +44,37 @@ public class NettyRpcServer implements RpcServer {
                         .addLast(new NettyDecoder(serializer, RpcRequest.class))
                         .addLast(new NettyEncoder(serializer, RpcResponse.class))
                         .addLast(new IdleStateHandler(10, 10, 10, TimeUnit.SECONDS))
-                        .addLast(new SimpleChannelInboundHandler<RpcRequest>(){
+                        .addLast(new SimpleChannelInboundHandler<RpcRequest>() {
 
                             @Override
                             protected void channelRead0(ChannelHandlerContext ctx, RpcRequest msg) throws Exception {
                                 RpcResponse rpcResponse = requestProcessor.action(msg);
                                 ctx.writeAndFlush(rpcResponse);
                             }
+
+                            @Override
+                            public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+                                System.out.println("ssssss");
+                            }
+
+                            @Override
+                            public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+                                System.out.println("zzzzzzzzzzzz");
+                                super.userEventTriggered(ctx, evt);
+                            }
+
+                            @Override
+                            public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+                                System.out.println("wwwwwwwwwwwww");
+                            }
                         });
             }
         });
-        bootstrap.bind().sync();
+        try {
+            bootstrap.bind().sync();
+        } catch (InterruptedException e) {
+            throw new RpcException("server bind fail", e);
+        }
     }
 
     @Override

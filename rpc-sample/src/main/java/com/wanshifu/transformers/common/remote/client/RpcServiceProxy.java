@@ -1,7 +1,8 @@
 package com.wanshifu.transformers.common.remote.client;
 
+import com.wanshifu.transformers.common.remote.RpcException;
 import com.wanshifu.transformers.common.remote.protocol.RpcRequest;
-import com.wanshifu.transformers.common.remote.protocol.serialize.Serializer;
+import com.wanshifu.transformers.common.remote.protocol.RpcResponse;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -10,25 +11,25 @@ public class RpcServiceProxy implements InvocationHandler {
 
     private final Class<?> proxyClass;
 
-    private final String address;
+    private final RpcClient rpcClient;
 
-    private final int port;
-
-    private final Serializer serializer;
-
-    public RpcServiceProxy(Class<?> proxyClass, String address, int port, Serializer serializer) {
+    public RpcServiceProxy(Class<?> proxyClass, RpcClient rpcClient) {
         this.proxyClass = proxyClass;
-        this.address = address;
-        this.port = port;
-        this.serializer = serializer;
+        this.rpcClient = rpcClient;
     }
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         String methodName = method.getName();
         Class<?>[] parameterTypes = method.getParameterTypes();
-        Object[] parameters = args;
-        RpcRequest rpcRequest = new RpcRequest(proxyClass.getName(), methodName, parameters, parameterTypes);
-        return null;
+        RpcRequest rpcRequest = new RpcRequest(proxyClass.getName(), methodName, args, parameterTypes);
+        if (!rpcClient.isAlive()) {
+            rpcClient.connect();
+        }
+        RpcResponse rpcResponse = rpcClient.send(rpcRequest);
+        if (rpcResponse.getErrorMsg() != null) {
+            throw new RpcException("remote invoke fail! msg : " + rpcResponse.getErrorMsg());
+        }
+        return rpcResponse.getResult();
     }
 }

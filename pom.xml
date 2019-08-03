@@ -16,6 +16,7 @@
         <module>netty-sample-01</module>
         <module>netty-sample-02</module>
         <module>netty-sample-03</module>
+        <module>rpc-sample</module>
     </modules>
 
     <properties>

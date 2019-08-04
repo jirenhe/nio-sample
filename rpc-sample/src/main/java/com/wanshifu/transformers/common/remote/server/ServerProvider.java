@@ -45,7 +45,7 @@ public class ServerProvider implements RequestProcessor {
         try {
             serviceClass = Class.forName(rpcRequest.getRequestClass());
         } catch (ClassNotFoundException e) {
-            //todo logger this
+            RpcResponse.error(requestId, "this service was not register!");
         }
         Object service = servicesMapping.get(serviceClass);
         if (service != null) {
@@ -76,7 +76,7 @@ public class ServerProvider implements RequestProcessor {
             throw new RpcException(String.format("service : %s method is not exist! please check it!", methodName));
         } catch (InvocationTargetException e) {
             //todo get exception stack
-            throw new RpcException("rpc error!");
+            throw new RpcException("remote method invoke error!", e);
         }
     }
 

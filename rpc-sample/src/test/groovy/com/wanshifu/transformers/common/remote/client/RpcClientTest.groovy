@@ -1,7 +1,9 @@
 package com.wanshifu.transformers.common.remote.client
 
-import org.junit.Test
+
 import spock.lang.Specification
+
+import java.lang.reflect.UndeclaredThrowableException
 
 class RpcClientTest extends Specification {
 
@@ -9,11 +11,25 @@ class RpcClientTest extends Specification {
 
         setup:
         Foo foo = getFoo()
-        TestService service = RpcServiceFactory.getLongKeepRemoteService(TestService, "localhost", 9876)
+        TestService service = RpcServiceFactory.getKeepAliveRemoteService(TestService, "localhost", 9876)
 
         expect:
         println(service.request(a))
-        1
+
+        where:
+        a << [foo, foo]
+
+    }
+
+    def "test1"() {
+
+        setup:
+        Foo foo = getFoo()
+        TestService service = RpcServiceFactory.getShortConnectRemoteService(TestService, "localhost", 9876)
+
+        expect:
+        println(service.request(a))
+
 
         where:
         a << [foo, foo]
@@ -23,13 +39,59 @@ class RpcClientTest extends Specification {
     def "test2"() {
 
         setup:
-        Foo foo = getFoo()
+        TestService service = RpcServiceFactory.getKeepAliveRemoteService(TestService, "localhost", 9876)
 
         expect:
-        RpcServiceFactory.getOnceRemoteService(TestService, "localhost", 9876)request(a)
+        println(service.request2())
+
+        where:
+        a << [null, null]
+
+    }
+
+    def "test3"() {
+
+        setup:
+        Foo foo = getFoo()
+        TestService service = RpcServiceFactory.getKeepAliveRemoteService(TestService, "localhost", 9876)
+
+        expect:
+        println(service.request3(a))
 
         where:
         a << [foo, foo]
+
+    }
+
+    def "test4"() {
+
+        setup:
+        TestService service = RpcServiceFactory.getKeepAliveRemoteService(TestService, "localhost", 9876)
+
+        when:
+        service.testFail()
+
+        then:
+        thrown(UndeclaredThrowableException)
+
+        where:
+        a << [1, 1]
+
+    }
+
+    def "test5"() {
+
+        setup:
+        FooService service = RpcServiceFactory.getKeepAliveRemoteService(FooService, "localhost", 9876)
+
+        when:
+        service.test()
+
+        then:
+        thrown(UndeclaredThrowableException)
+
+        where:
+        a << [1, 1]
 
     }
 

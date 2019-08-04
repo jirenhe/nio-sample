@@ -7,15 +7,12 @@ import com.wanshifu.transformers.common.remote.protocol.RpcResponse;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
-public class RpcServiceProxy implements InvocationHandler {
+public abstract class RpcServiceProxy implements InvocationHandler {
 
     private final Class<?> proxyClass;
 
-    private final RpcClient rpcClient;
-
-    public RpcServiceProxy(Class<?> proxyClass, RpcClient rpcClient) {
+    protected RpcServiceProxy(Class<?> proxyClass) {
         this.proxyClass = proxyClass;
-        this.rpcClient = rpcClient;
     }
 
     @Override
@@ -23,13 +20,12 @@ public class RpcServiceProxy implements InvocationHandler {
         String methodName = method.getName();
         Class<?>[] parameterTypes = method.getParameterTypes();
         RpcRequest rpcRequest = new RpcRequest(proxyClass.getName(), methodName, args, parameterTypes);
-        if (!rpcClient.isAlive()) {
-            rpcClient.connect();
-        }
-        RpcResponse rpcResponse = rpcClient.send(rpcRequest);
+        RpcResponse rpcResponse = this.doRpcInvoke(rpcRequest);
         if (rpcResponse.getErrorMsg() != null) {
             throw new RpcException("remote invoke fail! msg : " + rpcResponse.getErrorMsg());
         }
         return rpcResponse.getResult();
     }
+
+    protected abstract RpcResponse doRpcInvoke(RpcRequest rpcRequest) throws RpcException;
 }

@@ -14,17 +14,19 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
 
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-public abstract class NettyRpcClient implements RpcClient {
+public class NettyRpcClient implements RpcClient {
 
-    private final EventLoopGroup group = new NioEventLoopGroup();
+    private static final EventLoopGroup GROUP = new NioEventLoopGroup();
 
-    protected final int timeout;
+    private final int timeout;
 
-    protected Channel channel;
+    private Channel channel;
 
     private final String remoteAddress;
 
@@ -32,11 +34,21 @@ public abstract class NettyRpcClient implements RpcClient {
 
     private final Serializer serializer;
 
-    protected final Semaphore semaphore;
+    private final Semaphore semaphore;
 
     private long lastSendTime;
 
-    protected NettyRpcClient(String remoteAddress, int port, Serializer serializer, int timeout, int maxWait) {
+    private final Map<String, Signal> signalMap = new ConcurrentHashMap<>();
+
+    public NettyRpcClient(String remoteAddress, int port, Serializer serializer) {
+        this(remoteAddress, port, serializer, 2);
+    }
+
+    public NettyRpcClient(String remoteAddress, int port, Serializer serializer, int timeout) {
+        this(remoteAddress, port, serializer, timeout, 5);
+    }
+
+    public NettyRpcClient(String remoteAddress, int port, Serializer serializer, int timeout, int maxWait) {
         this.remoteAddress = remoteAddress;
         this.port = port;
         this.serializer = serializer;
@@ -53,7 +65,7 @@ public abstract class NettyRpcClient implements RpcClient {
     public void connect() throws RpcException {
         if (!isAlive()) {
             Bootstrap bootstrap = new Bootstrap();
-            bootstrap.group(group)
+            bootstrap.group(GROUP)
                     .channel(NioSocketChannel.class)
                     .handler(new ChannelInitializer<SocketChannel>() {
                         @Override
@@ -67,15 +79,10 @@ public abstract class NettyRpcClient implements RpcClient {
                                         @Override
                                         protected void channelRead0(ChannelHandlerContext ctx, RpcResponse rpcResponse) throws Exception {
                                             String requestId = rpcResponse.getRequestId();
-                                            final Signal signal = NettyRpcClient.this.getSignal(requestId);
+                                            final Signal signal = NettyRpcClient.this.signalMap.remove(requestId);
                                             if (signal != null) {
                                                 signal.notifyWaiter(rpcResponse);
                                             }
-                                        }
-
-                                        @Override
-                                        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-                                            NettyRpcClient.this.connectLost();
                                         }
                                     });
                         }
@@ -91,15 +98,12 @@ public abstract class NettyRpcClient implements RpcClient {
         }
     }
 
-    protected abstract Signal getSignal(String requestId);
-
-    protected abstract void connectLost();
-
     @Override
     public void close() {
-        this.group.shutdownGracefully();
         try {
-            this.channel.close().sync();
+            if (this.channel != null) {
+                this.channel.close().sync();
+            }
         } catch (InterruptedException ignore) {
         }
     }
@@ -109,7 +113,8 @@ public abstract class NettyRpcClient implements RpcClient {
         try {
             semaphore.acquire();
             this.channel.writeAndFlush(rpcRequest).sync();
-            Signal signal = this.createSignal(rpcRequest.getRequestId());
+            Signal signal = new Signal();
+            signalMap.put(rpcRequest.getRequestId(), signal);
             RpcResponse rpcResponse = signal.waitResponse(this.timeout);
             lastSendTime = System.currentTimeMillis();
             return rpcResponse;
@@ -120,13 +125,11 @@ public abstract class NettyRpcClient implements RpcClient {
         }
     }
 
-    protected abstract Signal createSignal(String requestId);
-
     public long lastActiveTime() {
         return lastSendTime;
     }
 
-    protected static class Signal {
+    private static class Signal {
 
         private final Object lock = new Object();
 

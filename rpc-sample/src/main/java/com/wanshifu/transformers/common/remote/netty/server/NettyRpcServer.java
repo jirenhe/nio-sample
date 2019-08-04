@@ -14,6 +14,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -24,13 +25,15 @@ public class NettyRpcServer implements RpcServer {
 
     private final ServerBootstrap bootstrap = new ServerBootstrap();
 
-    private final EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
+    private final EventLoopGroup eventloopGroup = new NioEventLoopGroup();
 
     private final Serializer serializer;
 
+    private ServerSocketChannel serverSocketChannel;
+
     public NettyRpcServer(String localAddress, int port, Serializer serializer) {
         this.serializer = serializer;
-        bootstrap.group(eventLoopGroup)
+        bootstrap.group(eventloopGroup)
                 .channel(NioServerSocketChannel.class)
                 .localAddress(localAddress, port);
     }
@@ -51,27 +54,11 @@ public class NettyRpcServer implements RpcServer {
                                 RpcResponse rpcResponse = requestProcessor.action(msg);
                                 ctx.writeAndFlush(rpcResponse);
                             }
-
-                            @Override
-                            public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-                                System.out.println("ssssss");
-                            }
-
-                            @Override
-                            public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-                                System.out.println("zzzzzzzzzzzz");
-                                super.userEventTriggered(ctx, evt);
-                            }
-
-                            @Override
-                            public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-                                System.out.println("wwwwwwwwwwwww");
-                            }
                         });
             }
         });
         try {
-            bootstrap.bind().sync();
+            serverSocketChannel = (ServerSocketChannel) bootstrap.bind().sync().channel();
         } catch (InterruptedException e) {
             throw new RpcException("server bind fail", e);
         }
@@ -79,6 +66,12 @@ public class NettyRpcServer implements RpcServer {
 
     @Override
     public void shutdown() {
-        eventLoopGroup.shutdownGracefully();
+        eventloopGroup.shutdownGracefully();
+        if (serverSocketChannel.isActive()) {
+            try {
+                serverSocketChannel.close().sync();
+            } catch (InterruptedException ignore) {
+            }
+        }
     }
 }

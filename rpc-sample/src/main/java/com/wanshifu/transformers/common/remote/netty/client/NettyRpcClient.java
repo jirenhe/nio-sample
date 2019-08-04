@@ -24,7 +24,7 @@ public class NettyRpcClient implements RpcClient {
 
     private static final EventLoopGroup GROUP = new NioEventLoopGroup();
 
-    private final int timeout;
+    private final long timeout;
 
     private Channel channel;
 
@@ -44,11 +44,11 @@ public class NettyRpcClient implements RpcClient {
         this(remoteAddress, port, serializer, 2);
     }
 
-    public NettyRpcClient(String remoteAddress, int port, Serializer serializer, int timeout) {
+    public NettyRpcClient(String remoteAddress, int port, Serializer serializer, long timeout) {
         this(remoteAddress, port, serializer, timeout, 5);
     }
 
-    public NettyRpcClient(String remoteAddress, int port, Serializer serializer, int timeout, int maxWait) {
+    public NettyRpcClient(String remoteAddress, int port, Serializer serializer, long timeout, int maxWait) {
         this.remoteAddress = remoteAddress;
         this.port = port;
         this.serializer = serializer;
@@ -116,6 +116,9 @@ public class NettyRpcClient implements RpcClient {
             Signal signal = new Signal();
             signalMap.put(rpcRequest.getRequestId(), signal);
             RpcResponse rpcResponse = signal.waitResponse(this.timeout);
+            if (rpcResponse == null) {
+                throw new RpcException("wait remote service response timeout!");
+            }
             lastSendTime = System.currentTimeMillis();
             return rpcResponse;
         } catch (InterruptedException e) {
@@ -135,11 +138,14 @@ public class NettyRpcClient implements RpcClient {
 
         private volatile RpcResponse rpcResponse;
 
-        private RpcResponse waitResponse(int timeout) {
+        private RpcResponse waitResponse(long timeout) {
+            long future = System.currentTimeMillis() + timeout;
+            long remaining = timeout;
             synchronized (lock) {
-                while (rpcResponse == null) {
+                while (rpcResponse == null && remaining > 0) {
                     try {
-                        lock.wait(timeout);
+                        lock.wait(remaining);
+                        remaining = future - System.currentTimeMillis();
                     } catch (InterruptedException ignore) {
                     }
                 }

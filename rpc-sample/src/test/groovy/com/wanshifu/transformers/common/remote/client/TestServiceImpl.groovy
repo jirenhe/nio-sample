@@ -1,5 +1,7 @@
 package com.wanshifu.transformers.common.remote.client
 
+import java.util.concurrent.TimeUnit
+
 class TestServiceImpl implements TestService {
 
     @Override
@@ -48,5 +50,10 @@ class TestServiceImpl implements TestService {
     @Override
     void testFail() {
         throw new RuntimeException("test fail!")
+    }
+
+    @Override
+    void testTimeOut(long time) {
+        TimeUnit.MILLISECONDS.sleep(time)
     }
 }

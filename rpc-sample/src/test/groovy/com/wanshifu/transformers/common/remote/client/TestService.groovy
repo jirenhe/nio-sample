@@ -10,4 +10,6 @@ interface TestService {
 
     void testFail()
 
+    void testTimeOut(long time)
+
 }

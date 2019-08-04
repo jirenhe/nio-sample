@@ -21,7 +21,7 @@ class RpcClientTest extends Specification {
 
     }
 
-    def "test1"() {
+    def "testRequest1"() {
 
         setup:
         Foo foo = getFoo()
@@ -36,7 +36,7 @@ class RpcClientTest extends Specification {
 
     }
 
-    def "test2"() {
+    def "testRequest2"() {
 
         setup:
         TestService service = RpcServiceFactory.getKeepAliveRemoteService(TestService, "localhost", 9876)
@@ -49,7 +49,7 @@ class RpcClientTest extends Specification {
 
     }
 
-    def "test3"() {
+    def "testRequest3"() {
 
         setup:
         Foo foo = getFoo()
@@ -63,7 +63,7 @@ class RpcClientTest extends Specification {
 
     }
 
-    def "test4"() {
+    def "testRemoteFail"() {
 
         setup:
         TestService service = RpcServiceFactory.getKeepAliveRemoteService(TestService, "localhost", 9876)
@@ -79,7 +79,23 @@ class RpcClientTest extends Specification {
 
     }
 
-    def "test5"() {
+    def "testTimeOut"() {
+
+        setup:
+        TestService service = RpcServiceFactory.getShortConnectRemoteService(TestService, "localhost", 9876, 10)
+
+        when:
+        service.testTimeOut(100)
+
+        then:
+        thrown(UndeclaredThrowableException)
+
+        where:
+        a << [1, 1]
+
+    }
+
+    def "testNoRegisterService"() {
 
         setup:
         FooService service = RpcServiceFactory.getKeepAliveRemoteService(FooService, "localhost", 9876)

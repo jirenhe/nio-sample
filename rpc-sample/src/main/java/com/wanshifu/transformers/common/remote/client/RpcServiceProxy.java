@@ -11,8 +11,11 @@ public abstract class RpcServiceProxy implements InvocationHandler {
 
     private final Class<?> proxyClass;
 
-    protected RpcServiceProxy(Class<?> proxyClass) {
+    protected final RpcClient rpcClient;
+
+    protected RpcServiceProxy(Class<?> proxyClass, RpcClient rpcClient) {
         this.proxyClass = proxyClass;
+        this.rpcClient = rpcClient;
     }
 
     @Override

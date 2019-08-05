@@ -6,11 +6,8 @@ import com.wanshifu.transformers.common.remote.protocol.RpcResponse;
 
 public class ShortRpcServiceProxy extends RpcServiceProxy {
 
-    private final RpcClient rpcClient;
-
-    protected ShortRpcServiceProxy(Class<?> proxyClass, RpcClient rpcClient) {
-        super(proxyClass);
-        this.rpcClient = rpcClient;
+    ShortRpcServiceProxy(Class<?> proxyClass, RpcClient rpcClient) {
+        super(proxyClass, rpcClient);
     }
 
     @Override

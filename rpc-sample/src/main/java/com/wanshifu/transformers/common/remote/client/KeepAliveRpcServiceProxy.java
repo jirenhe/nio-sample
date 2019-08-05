@@ -6,11 +6,9 @@ import com.wanshifu.transformers.common.remote.protocol.RpcResponse;
 
 public class KeepAliveRpcServiceProxy extends RpcServiceProxy {
 
-    private final RpcClient rpcClient;
 
-    protected KeepAliveRpcServiceProxy(Class<?> proxyClass, RpcClient rpcClient) {
-        super(proxyClass);
-        this.rpcClient = rpcClient;
+    KeepAliveRpcServiceProxy(Class<?> proxyClass, RpcClient rpcClient) {
+        super(proxyClass, rpcClient);
         Runtime.getRuntime().addShutdownHook(new Thread(rpcClient::close));
     }
 
@@ -18,7 +16,7 @@ public class KeepAliveRpcServiceProxy extends RpcServiceProxy {
     protected RpcResponse doRpcInvoke(RpcRequest rpcRequest) throws RpcException {
         if (!rpcClient.isAlive()) {
             synchronized (this) {
-                if(!rpcClient.isAlive()){
+                if (!rpcClient.isAlive()) {
                     rpcClient.connect();
                 }
             }

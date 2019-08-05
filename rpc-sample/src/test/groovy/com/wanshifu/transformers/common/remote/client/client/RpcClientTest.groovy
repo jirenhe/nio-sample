@@ -1,6 +1,9 @@
-package com.wanshifu.transformers.common.remote.client
+package com.wanshifu.transformers.common.remote.client.client
 
-
+import com.wanshifu.transformers.common.remote.client.Foo
+import com.wanshifu.transformers.common.remote.client.FooService
+import com.wanshifu.transformers.common.remote.client.RpcServiceFactory
+import com.wanshifu.transformers.common.remote.client.TestService
 import spock.lang.Specification
 
 import java.lang.reflect.UndeclaredThrowableException

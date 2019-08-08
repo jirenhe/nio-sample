@@ -4,7 +4,7 @@ import com.wanshifu.transformers.common.remote.RpcException;
 import com.wanshifu.transformers.common.remote.protocol.RpcRequest;
 import com.wanshifu.transformers.common.remote.protocol.RpcResponse;
 
-public class ShortRpcServiceProxy extends RpcServiceProxy {
+public class ShortRpcServiceProxy extends AbstractRpcServiceProxy {
 
     ShortRpcServiceProxy(Class<?> proxyClass, RpcClient rpcClient) {
         super(proxyClass, rpcClient);

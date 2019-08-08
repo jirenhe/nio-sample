@@ -7,13 +7,13 @@ import com.wanshifu.transformers.common.remote.protocol.RpcResponse;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
-public abstract class RpcServiceProxy implements InvocationHandler {
+public abstract class AbstractRpcServiceProxy implements InvocationHandler {
 
     private final Class<?> proxyClass;
 
     protected final RpcClient rpcClient;
 
-    protected RpcServiceProxy(Class<?> proxyClass, RpcClient rpcClient) {
+    protected AbstractRpcServiceProxy(Class<?> proxyClass, RpcClient rpcClient) {
         this.proxyClass = proxyClass;
         this.rpcClient = rpcClient;
     }
